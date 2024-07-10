@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ai-story-generator"
+version = "0.1.0"
+description = ""
+authors = ["benste <benstmrs@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+transformers = "^4.42.3"
+torch = "^2.3.1"
+accelerate = "^0.32.1"
+llama-cpp-python = "^0.2.82"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
