@@ -63,7 +63,7 @@ def main():
                 my_story_generator.load_story()
     
         # Start creating the story
-        create_story(my_story_generator)
+        story_made = create_story(my_story_generator)
         
 if __name__ == "__main__":
     main()
