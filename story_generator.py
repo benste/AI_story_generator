@@ -17,8 +17,6 @@ class StoryGenerator:
         
         # Load general instructions for creating a story in the style of Isaac Asimov
         self.instructions = json.load(open("instructions.json", "r"))
-        if not use_bullet_points:
-            self.instructions['paragraph'] = self.instructions['paragraph_no_bulletpoints']
     
     def guess_tokenizer_path(self, model_str: str) -> str:
         """Guesses the Hugging Face tokenizer path based on the model string."""
@@ -61,11 +59,11 @@ class StoryGenerator:
         # Ask context size
         context_size = None
         while not context_size or not context_size.isdigit():
-            context_size = input(f"What context size do you want to use (default = 4096):\n")
+            context_size = input(f"\n\nWhat context size do you want to use (default = 4096, max = 32000):\n")
             if context_size == "":
                 context_size = "4096"
                 
-        self.context_size = int(context_size)
+        self.context_size = min([int(context_size), 32000])
 
         model_str = available_models[int(model_index)]
         model_path = os.path.join("models", model_str)
@@ -73,7 +71,7 @@ class StoryGenerator:
         self.llm = Llama(model_path=model_path, verbose=False, n_ctx=self.context_size)
 
         tokenizer_path = self.guess_tokenizer_path(model_str)
-        correct_path = input(f'Guessed tokenizer HF path to be "{tokenizer_path}". Is this correct? (Y/n)')
+        correct_path = input(f'\n\nGuessed tokenizer HF path to be "{tokenizer_path}". Is this correct? (Y/n)')
         correct_path = correct_path.lower() == "y" or correct_path == ""
         
         if not correct_path or not tokenizer_path:
@@ -91,11 +89,16 @@ class StoryGenerator:
         # Ask if bullet points should be created after each paragraph to help generate the next paragraph
         use_bullet_points = None
         while use_bullet_points is None or not use_bullet_points in ['y', 'n', '']:
-            use_bullet_points = input(f"""Should I make bullet-points of the important events after each paragraph to assist
-in creating the next paragraph?
-This can help keeping track of events many paragraphs back but is no guarantee. It also adds more compute time.
-When context length is very large it is recommended to not use bullet-points.""").lower()
-        self.use_bullet_points = use_bullet_points == 'y'
+            use_bullet_points = input(f"""\n\nI can create bullet-points of the important events after each paragraph to assist
+in creating the next paragraph.
+This can help tracking important events many paragraphs back, but is no guarantee. It also adds more compute time.
+With large context length it is recommended to not use bullet-points.
+Should I update story bullet-points after each paragraph? (Y/n)""").lower()
+        self.use_bullet_points = use_bullet_points == 'y' or ''
+        
+        if not self.use_bullet_points:
+            self.instructions['paragraph'] = self.instructions['paragraph_no_bulletpoints']
+            self.bullet_points = [None]
 
     def save_story(self):
         # Save to text file
