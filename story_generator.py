@@ -6,14 +6,14 @@ from llama_cpp import Llama
 from transformers import AutoTokenizer
 
 class StoryGenerator:
-    def __init__(self, use_bullet_points=True):
+    def __init__(self):
         self.story_outline = None
         self.story_title = None
         self.paragraphs = []
         self.bullet_points = []
         self.paragraph_prompts = []
         self.initialized = False
-        self.use_bullet_points = use_bullet_points
+        self.use_bullet_points = True
         
         # Load general instructions for creating a story in the style of Isaac Asimov
         self.instructions = json.load(open("instructions.json", "r"))
@@ -87,6 +87,15 @@ class StoryGenerator:
             self.chatnames = {"user": "user", "model": "assistant"}
         else:
             self.chatnames = {"user": "user", "model": "model"}
+            
+        # Ask if bullet points should be created after each paragraph to help generate the next paragraph
+        use_bullet_points = None
+        while use_bullet_points is None or not use_bullet_points in ['y', 'n', '']:
+            use_bullet_points = input(f"""Should I make bullet-points of the important events after each paragraph to assist
+in creating the next paragraph?
+This can help keeping track of events many paragraphs back but is no guarantee. It also adds more compute time.
+When context length is very large it is recommended to not use bullet-points.""").lower()
+        self.use_bullet_points = use_bullet_points == 'y'
 
     def save_story(self):
         # Save to text file
