@@ -14,10 +14,35 @@ class StoryGenerator:
         self.paragraph_prompts = []
         self.initialized = False
         self.use_bullet_points = True
-        
-        # Load general instructions for creating a story in the style of Isaac Asimov
-        self.instructions = json.load(open("instructions.json", "r"))
     
+        ### INITIALIZE ###
+        # Load instructions for creating a story
+        self.inquire_and_load_story_type()
+        
+        # Load model and tokenizer
+        self.load_model_and_tokenizer()
+        
+        # Correct role names
+        if "message['role'] == 'assistant'" in self.tokenizer.chat_template:
+            self.chatnames = {"user": "user", "model": "assistant"}
+        else:
+            self.chatnames = {"user": "user", "model": "model"}
+            
+        # Ask if bullet points should be created after each paragraph to help generate the next paragraph
+        self.inquire_bullet_points()
+        
+    def inquire_and_load_story_type(self):
+        my_path = os.path.dirname(os.path.realpath(__file__))
+        available_instructions = os.listdir(os.path.join(my_path, 'instructions'))
+        available_instructions_str = "\n".join([f"{i}: {instructions}" for i, instructions in enumerate(available_instructions)])
+
+        instruction_index = None
+        while not instruction_index or not instruction_index.isdigit() or int(instruction_index) not in range(len(available_instructions)):
+            instruction_index = input(f"Which model do you want to use:\n{available_instructions_str}\n")
+            
+        model_str = available_instructions[int(instruction_index)]
+        self.instructions = json.load(open(os.path.join(my_path, "instructions", model_str), "r"))
+
     def guess_tokenizer_path(self, model_str: str) -> str:
         """Guesses the Hugging Face tokenizer path based on the model string."""
         model_str = model_str.lower()
@@ -45,6 +70,20 @@ class StoryGenerator:
             return f"google/gemma-2-{size_str}-it"
         
         return None
+    
+    def inquire_bullet_points(self):
+        use_bullet_points = None
+        while use_bullet_points is None or not use_bullet_points in ['y', 'n', '']:
+            use_bullet_points = input(f"""\n\nI can create bullet-points of the important events after each paragraph to assist
+in creating the next paragraph.
+This can help tracking important events many paragraphs back, but is no guarantee. It also adds more compute time.
+With large context length it is recommended to not use bullet-points.
+Should I update story bullet-points after each paragraph? (Y/n)""").lower()
+        self.use_bullet_points = use_bullet_points == 'y' or ''
+        
+        if not self.use_bullet_points:
+            self.instructions['paragraph'] = self.instructions['paragraph_no_bulletpoints']
+            self.bullet_points = [None]
 
     def load_model_and_tokenizer(self):
         """Loads the selected model and tokenizer."""
@@ -66,7 +105,7 @@ class StoryGenerator:
         self.context_size = min([int(context_size), 32000])
 
         model_str = available_models[int(model_index)]
-        model_path = os.path.join("models", model_str)
+        model_path = os.path.join(my_path, "models", model_str)
         print(f"loading {model_path} with {context_size} context size")
         self.llm = Llama(model_path=model_path, verbose=False, n_ctx=self.context_size)
 
@@ -80,26 +119,6 @@ class StoryGenerator:
         print(f"loading tokenizer {tokenizer_path}")
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         
-        # Correct role names
-        if "message['role'] == 'assistant'" in self.tokenizer.chat_template:
-            self.chatnames = {"user": "user", "model": "assistant"}
-        else:
-            self.chatnames = {"user": "user", "model": "model"}
-            
-        # Ask if bullet points should be created after each paragraph to help generate the next paragraph
-        use_bullet_points = None
-        while use_bullet_points is None or not use_bullet_points in ['y', 'n', '']:
-            use_bullet_points = input(f"""\n\nI can create bullet-points of the important events after each paragraph to assist
-in creating the next paragraph.
-This can help tracking important events many paragraphs back, but is no guarantee. It also adds more compute time.
-With large context length it is recommended to not use bullet-points.
-Should I update story bullet-points after each paragraph? (Y/n)""").lower()
-        self.use_bullet_points = use_bullet_points == 'y' or ''
-        
-        if not self.use_bullet_points:
-            self.instructions['paragraph'] = self.instructions['paragraph_no_bulletpoints']
-            self.bullet_points = [None]
-
     def save_story(self):
         # Save to text file
         with open(os.path.join("stories", f"{self.story_title.rstrip()}.txt"), 'w') as f:
@@ -129,7 +148,7 @@ Should I update story bullet-points after each paragraph? (Y/n)""").lower()
         while not story_index or not story_index.isdigit() or int(story_index) not in range(len(available_stories_str)):
             story_index = input(f"Which story do you want to load:\n{available_stories_str}\n")
 
-        story_path = os.path.join("stories", available_stories[int(story_index)])
+        story_path = os.path.join(my_path, "stories", available_stories[int(story_index)])
         print(f"loading {story_path}")
         story_data = pickle.load(open(story_path, "rb"))
         

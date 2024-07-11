@@ -42,8 +42,6 @@ def create_story(my_story_generator: StoryGenerator):
 def main():
     my_story_generator = StoryGenerator()
     
-    my_story_generator.load_model_and_tokenizer()
-    
     # Ask to create a new story or start where left off
     new_story = None
     while new_story is None or new_story not in ['c', 'n', '']:

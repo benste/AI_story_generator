@@ -25,13 +25,13 @@ def create_story(my_story_generator: StoryGenerator) -> bool:
         goal_num_paragraphs = len(my_story_generator.paragraphs) + num_new_paragraphs
         
         for _ in range(num_new_paragraphs):
+            print(f"\n**generating paragraph {len(my_story_generator.paragraphs)+1}/{goal_num_paragraphs}\n")
+            
             if not my_story_generator.initialized:
                 # First paragraph and bullet points require a different prompt structure
                 my_story_generator.prime_story()
             else:
                 my_story_generator.make_new_paragraph()
-                
-            print(f"generated paragraph {len(my_story_generator.paragraphs)}/{goal_num_paragraphs}")
 
             if my_story_generator.paragraphs[-1].endswith("END"):
                 print("I STOPPED GENERATING MORE PARAGRAPHS BECAUSE I MIGHT HAVE FOUND THE END OF THE STORY")
@@ -54,12 +54,11 @@ def main():
     story_made = False
     while not story_made:
         my_story_generator = StoryGenerator()
-        my_story_generator.load_model_and_tokenizer()
         
         # Ask to create a new story or start where left off
         new_story = None
         while new_story is None or new_story not in ['c', 'n', '']:
-            new_story = input(f"Continue previous story (c), or create a new story (n) (default = n)\n").lower()
+            new_story = input(f"\n\nContinue previous story (c), or create a new story (n) (default = n)\n").lower()
             if new_story == 'c':
                 my_story_generator.load_story()
     
