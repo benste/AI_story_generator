@@ -5,7 +5,7 @@
 ## How to use
 
 1. Download this repo to a local directory
-2. Make sure you have python ^3.10
+2. Make sure you have python ^3.10 active
 3. Install required python libraries, they can be found in **pyproject.toml**. I suggest you use [poetry](https://python-poetry.org/) for easy dependency management
 4. Download a gguf of your favorit LLM and put it in the **models** folder. Tested and working models are:
     - [gemma-2-9b-it-IQ4_XS.gguf](https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/blob/main/gemma-2-9b-it-IQ4_XS.gguf)
